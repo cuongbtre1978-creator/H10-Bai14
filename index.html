@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Learning: Tính enthalpy của phản ứng</title>
+    <style>
+        :root {
+            /* Cột trái */
+            --left-bg: #0b1d3a;
+            --left-border: #4caf50;
+            --menu-btn-bg: #ffd54f;
+            --menu-btn-text: #0d47a1;
+            
+            /* Cột giữa */
+            --center-bg: #4e342e;
+            --center-border: #ff9800;
+            
+            /* Vùng hiển thị (display-area) */
+            --display-bg: #2a0a2a;
+            --display-border: #ce93d8;
+            --display-text: #ffe0b2;
+            
+            /* Cột phải */
+            --right-bg: #827717;
+            --right-border: #ffeb3b;
+            
+            /* Khác */
+            --success: #4caf50;
+            --error: #f44336;
+            --info: #00bcd4;
+            --warning: #ffeb3b;
+            --modal-bg: #222222;
+            --modal-text: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            padding: 5px;
+            gap: 5px;
+        }
+
+        /* Tỉ lệ 1 : 2 : 1 */
+        .left-panel {
+            flex: 1;
+            background-color: var(--left-bg);
+            border: 2px solid var(--left-border);
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        .center-panel {
+            flex: 2;
+            background-color: var(--center-bg);
+            border: 2px solid var(--center-border);
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        .right-panel {
+            flex: 1;
+            background-color: var(--right-bg);
+            border: 2px solid var(--right-border);
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        /* Thanh cuộn cột phải */
+        .right-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .right-panel::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        .right-panel::-webkit-scrollbar-thumb {
+            background: var(--right-border);
+            border-radius: 4px;
+        }
+
+        /* --- Cột Trái: Menu --- */
+        .menu-title {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            border-bottom: 1px dashed var(--left-border);
+            padding-bottom: 5px;
+        }
+
+        .menu-container {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .menu-btn {
+            background-color: var(--menu-btn-bg);
+            color: var(--menu-btn-text);
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .menu-btn:active {
+            transform: scale(0.98);
+        }
+        .submenu-container {
+            display: none;
+            padding-left: 15px;
+            margin-bottom: 10px;
+        }
+        .submenu-item {
+            color: #fff;
+            padding: 8px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.9rem;
+        }
+        .submenu-item:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .submenu-item.completed {
+            color: var(--success);
+        }
+
+        .complete-content-btn {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+        .complete-content-btn:disabled {
+            background-color: gray;
+            cursor: not-allowed;
+        }
+
+        /* --- Cột Giữa: Vùng hiển thị --- */
+        .display-area {
+            flex: 1;
+            background-color: var(--display-bg);
+            border: 2px solid var(--display-border);
+            border-radius: 10px;
+            color: var(--display-text);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Khóa cuộn vùng cha */
+            position: relative;
+        }
+
+        .display-content {
+            flex: 1;
+            overflow-y: auto; /* Cho phép cuộn vùng con */
+            max-height: 100%;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px;
+            padding-bottom: 40px; /* Nhường chỗ cho tên giáo viên */
+        }
+
+        .teacher-name {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* --- Intro View --- */
+        .intro-view {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .intro-title {
+            font-size: 2rem;
+            color: var(--center-border);
+            margin-bottom: 10px;
+        }
+        .intro-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        /* --- Quiz View --- */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        .question-text {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--display-border);
+            color: var(--display-text);
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+        .option-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .option-btn.selected {
+            background: var(--center-border);
+            color: #000;
+            font-weight: bold;
+        }
+        .option-btn.correct { background: var(--success); color: #fff; }
+        .option-btn.wrong { background: var(--error); color: #fff; }
+
+        .input-text, .input-textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--display-border);
+            background: rgba(0,0,0,0.3);
+            color: var(--display-text);
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        .input-textarea {
+            height: 100px;
+            resize: none;
+        }
+        .input-correct { border: 2px solid var(--success) !important; }
+        .input-wrong { border: 2px solid var(--error) !important; }
+
+        .btn-action {
+            background: var(--info);
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 1rem;
+            width: 100%;
+        }
+        .btn-action:disabled { background: gray; cursor: not-allowed; }
+
+        /* --- Result View --- */
+        .result-view {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .score-display {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .rank-xs { color: var(--success); font-size: 1.5rem; font-weight: bold; }
+        .rank-g { color: var(--info); font-size: 1.5rem; font-weight: bold; }
+        .rank-k { color: var(--warning); font-size: 1.5rem; font-weight: bold; }
+        .rank-tb { color: var(--error); font-size: 1.5rem; font-weight: bold; }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .btn-result {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-nop { background: var(--error); color: white; }
+        .btn-nop:disabled { background: gray; }
+        .btn-review { background: var(--info); color: white; }
+        .btn-retry { background: var(--warning); color: black; }
+
+        /* --- Cột Phải: Form & Config --- */
+        .right-header {
+            color: var(--right-border);
+            text-transform: uppercase;
+            border-bottom: 1px dashed var(--right-border);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+        .right-header:first-child { margin-top: 0; }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 3px;
+            color: #ccc;
+        }
+        .form-input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.2);
+            color: #fff;
+        }
+        .form-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats-list {
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            list-style-type: none;
+        }
+        .stats-list li { margin-bottom: 5px; }
+
+        .btn-start {
+            background: var(--error);
+            color: #fff;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        .btn-start:disabled { background: gray; cursor: not-allowed; }
+        .btn-small {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .sound-toggle {
+            text-align: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content-box {
+            background: var(--modal-bg);
+            color: var(--modal-text);
+            border: 2px solid var(--info);
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            color: var(--info);
+        }
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #fff;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        /* Cụ thể cho bảng review */
+        .review-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .review-table th, .review-table td {
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .review-table th { background: rgba(0,0,0,0.5); }
+        .review-row-correct { background: rgba(76, 175, 80, 0.1); border-left: 4px solid var(--success); }
+        .review-row-wrong { background: rgba(244, 67, 54, 0.1); border-left: 4px solid var(--error); }
+
+        /* Modal con Quiz (hiển thị câu hỏi học tập) */
+        .modal-quiz-btn {
+            background: var(--info); border: none; padding: 10px; border-radius: 5px; color: #fff; cursor: pointer; margin-top: 15px;
+        }
+
+        /* Responsive constraints bảo vệ layout 1:2:1 */
+        @media (max-width: 768px) {
+            .menu-btn { font-size: 0.8rem; padding: 8px; }
+            .submenu-item { font-size: 0.75rem; }
+            .intro-title { font-size: 1.5rem; }
+            .btn-start { font-size: 0.9rem; padding: 10px; }
+            .right-panel { padding: 10px; }
+            .display-content { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <!-- Cột Trái -->
+    <div class="left-panel">
+        <div class="menu-title">NỘI DUNG BÀI HỌC</div>
+        <div class="menu-container" id="menu-container">
+            <!-- Render Menu JS -->
+        </div>
+        <button id="btn-complete-content" class="complete-content-btn" onclick="completeContent()" disabled>HOÀN THÀNH PHẦN NỘI DUNG</button>
+    </div>
+
+    <!-- Cột Giữa -->
+    <div class="center-panel">
+        <div class="display-area">
+            <div class="display-content" id="display-content">
+                <!-- Nội dung động -->
+            </div>
+            <div class="teacher-name">Cô Nguyễn Ngọc Tuyết - Thầy Lê Nguyễn Cường</div>
+        </div>
+    </div>
+
+    <!-- Cột Phải -->
+    <div class="right-panel">
+        <div class="right-header">Thông tin học sinh</div>
+        <div class="form-group">
+            <label>Mã học sinh (*)</label>
+            <input type="text" id="hs-ma" class="form-input" disabled>
+        </div>
+        <div class="form-group">
+            <label>Họ và tên (*)</label>
+            <input type="text" id="hs-ten" class="form-input" disabled>
+        </div>
+        <div class="form-group">
+            <label>Lớp (*)</label>
+            <input type="text" id="hs-lop" class="form-input" disabled>
+        </div>
+
+        <div class="right-header">Cấu hình bài tập</div>
+        <div class="form-group">
+            <label>Tổng số câu (N) [5 - 25]</label>
+            <input type="number" id="numQuestions" class="form-input" value="10" min="5" max="25" onchange="calculateDist()" disabled>
+        </div>
+        <ul class="stats-list">
+            <li>Trắc nghiệm (40%): <span id="dist-mcq">4</span></li>
+            <li>Đúng/Sai (20%): <span id="dist-tf">2</span></li>
+            <li>Trả lời ngắn (20%): <span id="dist-sa">2</span></li>
+            <li>Tự luận (20%): <span id="dist-es">2</span></li>
+        </ul>
+
+        <div class="right-header">Các dạng bài</div>
+        <ul class="stats-list">
+            <li>1. Trắc nghiệm 4 lựa chọn</li>
+            <li>2. Đúng/Sai</li>
+            <li>3. Trả lời ngắn</li>
+            <li>4. Tự luận</li>
+        </ul>
+
+        <button id="btn-start" class="btn-start" onclick="startGame()" disabled>BẮT ĐẦU LÀM BÀI</button>
+        <button class="btn-small" onclick="showIntro()">Học lại bài (Intro)</button>
+        <button class="btn-small" onclick="resetAll()">Reset bài tập</button>
+        
+        <div class="sound-toggle" onclick="toggleSound()" id="sound-icon">🔊</div>
+    </div>
+</div>
+
+<!-- Modal Nội dung bài học -->
+<div class="modal-overlay" id="content-modal">
+    <div class="modal-content-box">
+        <div class="modal-header">
+            <span id="modal-title">Tiêu đề</span>
+            <span class="modal-close" onclick="closeModal('content-modal')">&times;</span>
+        </div>
+        <div class="modal-body" id="modal-body-content">
+            <!-- Nội dung HTML -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal Kết quả -->
+<div class="modal-overlay" id="review-modal">
+    <div class="modal-content-box">
+        <div class="modal-header">
+            <span>XEM LẠI BÀI LÀM</span>
+            <span class="modal-close" onclick="closeModal('review-modal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <table class="review-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">ĐÁP ÁN HỆ THỐNG</th>
+                        <th style="width: 50%;">BÀI LÀM CỦA HỌC SINH</th>
+                    </tr>
+                </thead>
+                <tbody id="review-tbody">
+                    <!-- Gen bằng JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- THÊM MỚI: Modal Xem kết quả riêng cho Phần Bài Tập Tương Tác -->
+<div class="modal-overlay" id="modal-quiz-review" style="z-index: 1001;">
+    <div class="modal-content-box">
+        <div class="modal-header">
+            <span>XEM KẾT QUẢ CHI TIẾT PHẦN BÀI TẬP</span>
+            <span class="modal-close" onclick="closeModalQuizReview()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <table class="review-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">ĐÁP ÁN HỆ THỐNG</th>
+                        <th style="width: 50%;">BÀI LÀM CỦA HỌC SINH</th>
+                    </tr>
+                </thead>
+                <tbody id="modal-quiz-review-tbody">
+                    <!-- Gen bằng JS -->
+                </tbody>
+            </table>
+            <div style="text-align:center; margin-top:20px;">
+                <button class="btn-action" style="width:auto; padding:10px 30px; background: var(--error);" onclick="closeModalQuizReview()">ĐÓNG</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // URL Google Apps Script Web App
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzieem1_ey6tHtjqxsa6mbgZjocsv2jLlGysC8zPBzyUcWL4g_0aXriRFgRN6lhx21M/exec";
+
+    // --- DỮ LIỆU BÀI HỌC (lessonData) ---
+    const lessonData = [
+        {
+            id: "bai14",
+            title: "BÀI 14: Tính biến thiên enthalpy của phản ứng hóa học",
+            subs: [
+                {
+                    id: "muc1",
+                    title: "I. LÝ THUYẾT",
+                    subs: [
+                        {
+                            id: "muc1_1",
+                            title: "I.1. Xác định biến thiên enthalpy của phản ứng dựa vào năng lượng liên kết",
+                            items: [
+                                {
+                                    t: "Công thức",
+                                    c: `<b>Công thức:</b><br>
+                                        Cho phản ứng tổng quát ở điều kiện chuẩn:<br>
+                                        aA(g) + bB(g) → mM(g) + nN(g)<br>
+                                        Tính Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> của phản ứng khi biết các giá trị năng lượng liên kết (E<sub>b</sub>) theo công thức:<br><br>
+                                        Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = [a.E<sub>b</sub>(A) + b.E<sub>b</sub>(B)] – [m.E<sub>b</sub>(M) + n.E<sub>b</sub>(N)]<br><br>
+                                        Tổng quát:<br>
+                                        Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑E<sub>b</sub>(cd) - ∑E<sub>b</sub>(sp)`
+                                },
+                                {
+                                    t: "Ví dụ 1",
+                                    c: `<b>Ví dụ 1:</b><br>
+                                        Cho biết năng lượng liên kết sau: E<sub>b</sub>(H-H) = 432 kJ/mol; E<sub>b</sub>(O=O) = 498 kJ/mol; E<sub>b</sub>(O-H) = 467 kJ/mol. Hãy tính biến thiên enthalpy của phản ứng sau:<br>
+                                        2H<sub>2</sub>(g) + O<sub>2</sub>(g) → 2H<sub>2</sub>O(g)<br><br>
+                                        <b>Hướng dẫn:</b><br>
+                                        Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = 2.E<sub>b</sub>(H<sub>2</sub>) + E<sub>b</sub>(O<sub>2</sub>) – 2.E<sub>b</sub>(H<sub>2</sub>O)<br>
+                                        = 2.E<sub>b</sub>(H-H) + E<sub>b</sub>(O=O) – 2.2.E<sub>b</sub>(O-H)<br>
+                                        = 2.432 + 498 – 2.2.467 = -506 kJ`
+                                }
+                            ]
+                        },
+                        {
+                            id: "muc1_2",
+                            title: "I.2. Xác định biến thiên enthalpy của phản ứng dựa vào enthalpy tạo thành",
+                            items: [
+                                {
+                                    t: "Công thức",
+                                    c: `<b>Công thức:</b><br>
+                                        Cho phương trình hóa học tổng quát: aA + bB → mM + nN<br>
+                                        Tính Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> khi biết các giá trị Δ<sub>f</sub>H<sup>0</sup><sub>298</sub> của tất cả các chất đầu và sản phẩm theo công thức sau:<br><br>
+                                        Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = [m.Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(M) + n.Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(N)] – [a.Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(A) + b.Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(B)]<br><br>
+                                        Tổng quát:<br>
+                                        Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(sp) - ∑Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(cd)`
+                                },
+                                {
+                                    t: "Ví dụ 2",
+                                    c: `<b>Ví dụ 2:</b><br>
+                                        Cho phản ứng: 2SO<sub>2</sub>(g) + O<sub>2</sub>(g) → 2SO<sub>3</sub>(l)<br>
+                                        Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = −288,4 kJ<br>
+                                        Tính nhiệt tạo thành chuẩn của khí SO<sub>2</sub> biết Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(SO<sub>3</sub>(l)) = − 441,0 kJ/mol.<br><br>
+                                        <b>Hướng dẫn:</b><br>
+                                        Ta có:<br>
+                                        Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = 2×Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(SO<sub>3</sub>(l)) - 2×Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(SO<sub>2</sub>(g)) − Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(O<sub>2</sub>(g))<br>
+                                        -288,4 = 2×(−441,0) - 2×Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(SO<sub>2</sub>(g)) − 0<br>
+                                        → Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(SO<sub>2</sub>(g)) = − 296,8 kJ/mol`
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: "muc2",
+                    title: "II. BÀI TẬP RÈN LUYỆN",
+                    subs: [
+                        { id: "muc2_1", title: "Phần 1. Trắc nghiệm 4 lựa chọn", type: "quiz", questions: [0,1,2,3,4,5,6,7,8,9,10,11] },
+                        { id: "muc2_2", title: "Phần 2. Trắc nghiệm đúng – sai", type: "quiz", questions: [12,13,14,15,16,17,18,19] },
+                        { id: "muc2_3", title: "Phần 3. Trắc nghiệm trả lời ngắn", type: "quiz", questions: [20,21,22,23] }
+                    ]
+                }
+            ]
+        }
+    ];
+
+    // --- NGÂN HÀNG CÂU HỎI (25 câu - Sinh từ nội dung lý thuyết & bài tập SGK) ---
+    // Type 1: MCQ, 2: T/F (a: 0=Đ, 1=S), 3: Short, 4: Essay (k: array keywords)
+    const qBank = [
+        // Type 1: Từ "Phần 1. Trắc nghiệm 4 lựa chọn" (12 câu)
+        { type: 1, q: "Trong một phản ứng hóa học, quá trình phá vỡ các liên kết hóa học của chất đầu là quá trình", opts: ["A. Tỏa nhiệt (giải phóng năng lượng).", "B. Thu nhiệt (cần cung cấp năng lượng).", "C. Không thay đổi năng lượng.", "D. Vừa tỏa nhiệt vừa thu nhiệt."], a: 1 },
+        { type: 1, q: "Quá trình hình thành các liên kết hóa học của sản phẩm là quá trình:", opts: ["A. Thu nhiệt.", "B. Tỏa nhiệt.", "C. Hấp thụ nhiệt lượng từ môi trường.", "D. Làm tăng enthalpy của hệ."], a: 1 },
+        { type: 1, q: "Công thức tính biến thiên enthalpy chuẩn của phản ứng Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> dựa vào năng lượng liên kết (E<sub>b</sub>) là:", opts: ["A. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑E<sub>b</sub>(sp)", "B. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑E<sub>b</sub>(cd) x ∑E<sub>b</sub>(sp)", "C. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑E<sub>b</sub>(cd) - ∑E<sub>b</sub>(sp)", "D. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑E<sub>b</sub>(cd) + ∑E<sub>b</sub>(sp)"], a: 2 },
+        { type: 1, q: "Công thức tính biến thiên enthalpy chuẩn của phản ứng Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> dựa vào enthalpy tạo thành (Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>) là", opts: ["A. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(sp) + ∑Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(cd)", "B. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(sp) - ∑Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(cd)", "C. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(sp) x ∑Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(cd)", "D. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = ∑Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(cd)"], a: 1 },
+        { type: 1, q: "Phản ứng tỏa nhiệt là phản ứng có giá trị Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> như thế nào?", opts: ["A. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> > 0", "B. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = 0", "C. Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> < 0", "D. 0 < Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> < 1"], a: 2 },
+        { type: 1, q: "Phản ứng quang hợp của cây xanh (6CO<sub>2</sub> + 6H<sub>2</sub>O → C<sub>6</sub>H<sub>12</sub>O<sub>6</sub> + 6O<sub>2</sub>) có Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = + 2803 kJ. Đây là phản ứng", opts: ["A. Tỏa nhiệt.", "B. Thu nhiệt.", "C. Oxi hóa khử không thay đổi nhiệt.", "D. Tự xảy ra ở mọi điều kiện."], a: 1 },
+        { type: 1, q: "Tại sao nitrogen (N≡N) rất bền và chỉ phản ứng ở nhiệt độ cao hoặc có tia lửa điện?", opts: ["A. Vì phân tử Nitrogen có khối lượng nhỏ.", "B. Vì năng lượng liên kết ba N≡N rất lớn (945 kJ/mol).", "C. Vì Nitrogen là khí hiếm.", "D. Vì Nitrogen không tan trong nước."], a: 1 },
+        { type: 1, q: "Đối với phản ứng đốt cháy nhiên liệu (như gas, xăng, methane...), đặc điểm nào sau đây là đúng?", opts: ["A. Là phản ứng thu nhiệt, làm môi trường lạnh đi.", "B. Là phản ứng tỏa nhiệt, giải phóng năng lượng lớn.", "C. Có biến thiên enthalpy dương (Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> > 0).", "D. Không có sự thay đổi về năng lượng."], a: 1 },
+        { type: 1, q: "Cho các giá trị nhiệt tạo thành chuẩn: Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(CO<sub>2</sub>) = -393,5 kJ/mol; Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(CO) = -110,50 kJ/mol; Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(N<sub>2</sub>O) = 82,05 kJ/mol; Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>(N<sub>2</sub>O<sub>4</sub>) = 9,16 kJ/mol. Tính Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> của phản ứng: N<sub>2</sub>O<sub>4</sub>(g) + 3CO(g) → N<sub>2</sub>O(g) + 3CO<sub>2</sub>(g).", opts: ["A. -776,11 kJ.", "B. +776,11 kJ.", "C. -300,5 kJ.", "D. -500,2 kJ."], a: 0 },
+        { type: 1, q: "Đơn vị thường dùng cho năng lượng liên kết (E<sub>b</sub>) và enthalpy tạo thành chuẩn (Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>) là", opts: ["A. kJ/mol.", "B. kg/mol.", "C. Pa.", "D. Lít."], a: 0 },
+        { type: 1, q: "Dựa vào năng lượng liên kết: E<sub>b</sub>(H-H)= 432 kJ/mol; E<sub>b</sub>(Cl-Cl)=243 kJ/mol; E<sub>b</sub>(H-Cl)=427 kJ/mol. Biến thiên enthalpy của phản ứng H<sub>2</sub>(g) + Cl<sub>2</sub>(g) → 2HCl(g) là", opts: ["A. -179 kJ.", "B. +179 kJ.", "C. -854 kJ.", "D. +675 kJ."], a: 0 },
+        { type: 1, q: "Tính Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> của phản ứng tổng hợp ammonia: 3H<sub>2</sub>(g) + N<sub>2</sub>(g) → 2NH<sub>3</sub>(g). Biết E<sub>b</sub>(H-H)= 432; E<sub>b</sub>(N≡N)= 945; E<sub>b</sub>(N-H)= 391 (đơn vị kJ/mol).", opts: ["A. -105 kJ.", "B. +105 kJ.", "C. -93 kJ.", "D. +200 kJ."], a: 0 },
+        
+        // Type 2: Đúng/Sai từ Phần 2 (Tách riêng từng ý theo chuẩn E-learning) (8 câu)
+        { type: 2, q: "Quá trình phá vỡ các liên kết hóa học trong chất đầu luôn cần cung cấp năng lượng.", a: 0 }, // Đúng
+        { type: 2, q: "Phản ứng tỏa nhiệt có giá trị biến thiên enthalpy chuẩn lớn hơn 0 (Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> > 0).", a: 1 }, // Sai
+        { type: 2, q: "Phản ứng đốt cháy khí methane (CH<sub>4</sub>) trong không khí là phản ứng tỏa nhiệt.", a: 0 }, // Đúng
+        { type: 2, q: "Khi tính Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> dựa vào năng lượng liên kết E<sub>b</sub>, ta lấy tổng E<sub>b</sub> của sản phẩm trừ đi tổng E<sub>b</sub> của chất đầu.", a: 1 }, // Sai
+        { type: 2, q: "Quá trình quang hợp của cây xanh là một ví dụ điển hình về phản ứng tỏa nhiệt.", a: 1 }, // Sai
+        { type: 2, q: "Khi tính Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> dựa vào nhiệt tạo thành Δ<sub>f</sub>H<sup>0</sup><sub>298</sub>, ta lấy tổng nhiệt tạo thành của các chất sản phẩm trừ đi tổng nhiệt tạo thành của các chất đầu.", a: 0 }, // Đúng
+        { type: 2, q: "Nitrogen (N<sub>2</sub>) hoạt động hóa học mạnh ở nhiệt độ thường do có liên kết ba bền vững.", a: 1 }, // Sai
+        { type: 2, q: "Các phản ứng có Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> < 0 thường làm tăng nhiệt độ của môi trường xung quanh.", a: 0 }, // Đúng
+
+        // Type 3: Trả lời ngắn từ Phần 3 (4 câu)
+        { type: 3, q: "Cho biết phản ứng tạo thành 2 mol HCl(g) ở điều kiện chuẩn tỏa ra 184,6kJ: H<sub>2</sub>(g) + Cl<sub>2</sub>(g) → 2HCl(g) (*). Có mấy phát biểu đúng trong 4 phát biểu sau? (a) Nhiệt tạo thành của HCl là –184,6 kJ. (b) Biến thiên enthalpy phản ứng (*) là –184,6 kJ. (c) Nhiệt tạo thành của HCl là –92,3 kJ. (d) Biến thiên enthalpy phản ứng (*) là –92,3 kJ.", a: "2" },
+        { type: 3, q: "Có mấy phát biểu đúng? (a) Biến thiên enthalpy chuẩn là nhiệt kèm theo ở 1 atm và 25oC. (b) Nhiệt kèm theo ở 1 bar và 298K là biến thiên enthalpy chuẩn. (c) Phản ứng làm môi trường nóng lên là thu nhiệt. (d) Phản ứng làm môi trường lạnh đi là thu nhiệt.", a: "2" },
+        { type: 3, q: "Cho E<sub>b</sub>(C-H) = 418 kJ/mol; E<sub>b</sub>(C-C) = 346 kJ/mol; E<sub>b</sub>(C=C) = 612 kJ/mol. Biến thiên enthalpy của phản ứng: C<sub>3</sub>H<sub>8</sub>(g) → CH<sub>4</sub>(g) + C<sub>2</sub>H<sub>4</sub>(g) có giá trị bao nhiêu kJ?", a: "80" },
+        { type: 3, q: "Cho phương trình: SO<sub>2</sub>(g) + 1/2 O<sub>2</sub>(g) → SO<sub>3</sub>(g) có Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> = -98,5 kJ. Giá trị Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> của phản ứng ngược lại SO<sub>3</sub>(g) → SO<sub>2</sub>(g) + 1/2 O<sub>2</sub>(g) là bao nhiêu? (ghi rõ dấu + nếu có)", a: "+98,5" },
+
+        // Thêm 1 câu tự luận (Type 4) trích từ nội dung Lý thuyết để đủ 25 câu (1 câu)
+        { type: 4, q: "Hãy nêu nguyên tắc chung tính biến thiên enthalpy chuẩn của phản ứng Δ<sub>r</sub>H<sup>0</sup><sub>298</sub> dựa vào enthalpy tạo thành chuẩn.", k: ["sản phẩm", "trừ", "chất đầu", "tạo thành"] }
+    ];
+
+    // --- BIẾN TOÀN CỤC ---
+    let soundEnabled = true;
+    let audioCtx = null;
+    let learnedSubs = new Set();
+    const TOTAL_LEARN_ITEMS = 7; // I.1 (CT, VD), I.2 (CT, VD), P1, P2, P3
+    let isContentCompleted = false;
+
+    // Trạng thái Quiz
+    let currentQuizCode = "";
+    let N = 10;
+    let activeQuestions = [];
+    let currentQIndex = 0;
+    let answersLog = [];
+    let score = 0;
+    let hasSubmitted = false;
+
+    // --- KHỞI TẠO ÂM THANH ---
+    function initAudio() {
+        if(!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if(AudioContext) audioCtx = new AudioContext();
+        }
+    }
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        document.getElementById('sound-icon').innerText = soundEnabled ? '🔊' : '🔇';
+    }
+    function playSound(isGood) {
+        if(!soundEnabled) return;
+        initAudio();
+        if(!audioCtx) return;
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if(isGood) {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            }
+        } catch(e) {}
+    }
+
+    // --- RENDER MENU & KIỂM SOÁT HỌC TẬP ---
+    function renderMenu() {
+        const container = document.getElementById('menu-container');
+        container.innerHTML = '';
+        lessonData.forEach(l1 => {
+            const d1 = document.createElement('div');
+            d1.innerHTML = `<div style="color:var(--menu-btn-bg); font-weight:bold; margin-bottom:10px;">${l1.title}</div>`;
+            container.appendChild(d1);
+
+            l1.subs.forEach(l2 => {
+                const btn2 = document.createElement('button');
+                btn2.className = 'menu-btn';
+                btn2.innerText = l2.title;
+                const subDiv2 = document.createElement('div');
+                subDiv2.className = 'submenu-container';
+                
+                let firstModalTrigger = null;
+
+                if (l2.subs && l2.subs.length > 0) {
+                    l2.subs.forEach(l3 => {
+                        if (l3.items && l3.items.length > 0) {
+                            // Cấp tiêu đề phụ (VD: I.1. Xác định...)
+                            const d3 = document.createElement('div');
+                            d3.style.color = '#fff';
+                            d3.style.fontWeight = 'bold';
+                            d3.style.padding = '8px 0 4px 0';
+                            d3.style.fontSize = '0.9rem';
+                            d3.innerText = l3.title;
+                            subDiv2.appendChild(d3);
+
+                            l3.items.forEach((item, idx) => {
+                                const itemDiv = document.createElement('div');
+                                itemDiv.className = 'submenu-item';
+                                itemDiv.id = `learn-${l3.id}-${idx}`;
+                                itemDiv.innerText = "• " + item.t;
+                                itemDiv.onclick = () => {
+                                    markLearned(itemDiv.id);
+                                    openModalContent(item.t, item.c);
+                                };
+                                subDiv2.appendChild(itemDiv);
+                                
+                                // Lưu hành động mở modal của mục đầu tiên
+                                if (!firstModalTrigger) firstModalTrigger = itemDiv.onclick;
+                            });
+                        } else if (l3.type === "quiz") {
+                            // Cấp mục con mở quiz (VD: Phần 1, Phần 2)
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'submenu-item';
+                            itemDiv.id = `learn-${l3.id}`;
+                            itemDiv.innerText = l3.title;
+                            itemDiv.onclick = () => {
+                                markLearned(itemDiv.id);
+                                openModalQuiz(l3.title, l3.questions);
+                            };
+                            subDiv2.appendChild(itemDiv);
+                            
+                            // Lưu hành động mở modal của mục đầu tiên
+                            if (!firstModalTrigger) firstModalTrigger = itemDiv.onclick;
+                        } else {
+                            // Sub item text thông thường
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'submenu-item';
+                            itemDiv.id = `learn-${l3.id}`;
+                            itemDiv.innerText = l3.title;
+                            itemDiv.onclick = () => {
+                                markLearned(itemDiv.id);
+                                openModalContent(l3.title, l3.content || "Nội dung đang cập nhật...");
+                            };
+                            subDiv2.appendChild(itemDiv);
+                            if (!firstModalTrigger) firstModalTrigger = itemDiv.onclick;
+                        }
+                    });
+                }
+
+                // Xử lý sự kiện bấm mục cấp cha
+                btn2.onclick = () => {
+                    const isOpening = subDiv2.style.display !== 'block';
+                    subDiv2.style.display = isOpening ? 'block' : 'none';
+                    
+                    // Chỉ bật modal nếu trạng thái là đang MỞ submenu
+                    if (isOpening) {
+                        if (firstModalTrigger) {
+                            firstModalTrigger(); // Gọi hàm click của mục con đầu tiên
+                        } else {
+                            // Mở modal báo chưa có nội dung nếu rỗng
+                            openModalContent(l2.title, "Mục này chưa có nội dung. Vui lòng chọn mục con.");
+                        }
+                    }
+                };
+
+                container.appendChild(btn2);
+                container.appendChild(subDiv2);
+            });
+        });
+    }
+
+    function markLearned(id) {
+        learnedSubs.add(id);
+        const el = document.getElementById(id);
+        if(el) el.classList.add('completed');
+        checkCompletion();
+    }
+
+    function checkCompletion() {
+        if(learnedSubs.size >= TOTAL_LEARN_ITEMS && !isContentCompleted) {
+            const btn = document.getElementById('btn-complete-content');
+            btn.style.display = 'block';
+            btn.disabled = false;
+        }
+    }
+
+    function completeContent() {
+        isContentCompleted = true;
+        document.getElementById('btn-complete-content').innerText = "ĐÃ HOÀN THÀNH";
+        document.getElementById('btn-complete-content').disabled = true;
+        
+        // Mở khóa cột phải
+        document.getElementById('hs-ma').disabled = false;
+        document.getElementById('hs-ten').disabled = false;
+        document.getElementById('hs-lop').disabled = false;
+        document.getElementById('numQuestions').disabled = false;
+        document.getElementById('btn-start').disabled = false;
+        alert("Bạn đã hoàn thành nội dung lý thuyết. Hãy điền thông tin để bắt đầu làm bài!");
+    }
+
+    // --- MODALS ---
+    function openModalContent(title, htmlContent) {
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-body-content').innerHTML = htmlContent;
+        document.getElementById('content-modal').style.display = 'flex';
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+        if(id === 'content-modal') {
+            document.getElementById('modal-body-content').innerHTML = '';
+        }
+    }
+
+    // Modal học tập cho phần bài tập
+    let tempModalQIndex = 0;
+    let tempModalQuestions = [];
+    let tempModalCorrect = 0;
+    let tempModalWrong = 0;
+    let tempUserAnswer = null;
+    let tempModalAnswersLog = []; // Biến lưu lịch sử riêng cho phần bài tập
+
+    function openModalQuiz(title, qIndices) {
+        tempModalQuestions = qIndices.map(i => qBank[i]);
+        tempModalQIndex = 0;
+        tempModalCorrect = 0;
+        tempModalWrong = 0;
+        tempModalAnswersLog = []; // Reset log mỗi khi mở phần mới
+        document.getElementById('modal-title').innerText = title;
+        renderModalQuizStep();
+        document.getElementById('content-modal').style.display = 'flex';
+    }
+    
+    function renderModalQuizStep() {
+        if(tempModalQIndex >= tempModalQuestions.length) {
+            document.getElementById('modal-body-content').innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <h2 style="color:var(--success); margin-bottom: 20px; text-transform: uppercase;">ĐÃ HOÀN THÀNH PHẦN BÀI TẬP</h2>
+                    <div style="font-size: 1.5rem; margin-bottom: 10px; font-weight: bold; color: var(--success);">
+                        Số câu đúng: ${tempModalCorrect} / ${tempModalQuestions.length}
+                    </div>
+                    <div style="font-size: 1.5rem; margin-bottom: 20px; font-weight: bold; color: var(--error);">
+                        Số câu sai: ${tempModalWrong} / ${tempModalQuestions.length}
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 15px;">
+                        <button class="btn-action" style="width: auto; padding: 10px 30px; background: var(--info);" onclick="openModalQuizReview()">XEM KẾT QUẢ</button>
+                        <button class="btn-action" style="width: auto; padding: 10px 30px; background: var(--error);" onclick="closeModal('content-modal')">ĐÓNG</button>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        tempUserAnswer = null; // Reset đáp án của câu mới
+        const q = tempModalQuestions[tempModalQIndex];
+        
+        let html = `<div style="font-weight:bold; margin-bottom:10px; color: var(--info); font-size: 1.1rem;">Câu ${tempModalQIndex + 1}/${tempModalQuestions.length}</div>`;
+        html += `<div style="margin-bottom:20px; font-size: 1.2rem; line-height: 1.5;">${q.q}</div>`;
+        html += `<div class="options-container" id="modal-ans-container">`;
+        
+        if(q.type === 1) {
+            q.opts.forEach((o, i) => {
+                html += `<div class="option-btn" onclick="selectModalOpt(this, 1)" data-idx="${i}">${o}</div>`;
+            });
+        } else if(q.type === 2) {
+            html += `<div class="option-btn" onclick="selectModalOpt(this, 2)" data-val="0">Đúng</div>`;
+            html += `<div class="option-btn" onclick="selectModalOpt(this, 2)" data-val="1">Sai</div>`;
+        } else if(q.type === 3) {
+            html += `<input type="text" id="modal-ans-input" class="input-text" placeholder="Nhập câu trả lời..." oninput="tempUserAnswer = this.value">`;
+        }
+        
+        html += `</div>`;
+        html += `<button class="btn-action" style="margin-top: 20px;" onclick="nextModalQuiz()">CÂU TIẾP THEO →</button>`;
+        
+        document.getElementById('modal-body-content').innerHTML = html;
+    }
+
+    function selectModalOpt(el, type) {
+        const container = document.getElementById('modal-ans-container');
+        Array.from(container.children).forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        
+        if(type === 1) {
+            tempUserAnswer = parseInt(el.getAttribute('data-idx'));
+        } else if(type === 2) {
+            tempUserAnswer = parseInt(el.getAttribute('data-val'));
+        }
+    }
+
+    function nextModalQuiz() {
+        const q = tempModalQuestions[tempModalQIndex];
+        let isCorrect = false;
+        let uAnsStr = "";
+        let sAnsStr = "";
+
+        // Kiểm tra input, chấm điểm và lấy chuỗi đáp án
+        if(q.type === 1) {
+            if(tempUserAnswer === null) {
+                alert("Vui lòng chọn một đáp án trước khi chuyển câu!");
+                return;
+            }
+            isCorrect = (tempUserAnswer === q.a);
+            uAnsStr = q.opts[tempUserAnswer];
+            sAnsStr = q.opts[q.a];
+        } else if(q.type === 2) {
+            if(tempUserAnswer === null) {
+                alert("Vui lòng chọn một đáp án trước khi chuyển câu!");
+                return;
+            }
+            isCorrect = (tempUserAnswer === q.a);
+            uAnsStr = tempUserAnswer === 0 ? "Đúng" : "Sai";
+            sAnsStr = q.a === 0 ? "Đúng" : "Sai";
+        } else if(q.type === 3) {
+            const input = document.getElementById('modal-ans-input');
+            const val = input ? input.value.trim() : "";
+            if(!val) {
+                alert("Vui lòng nhập câu trả lời trước khi chuyển câu!");
+                return;
+            }
+            // Gọi hàm normalizeText đã có sẵn của Quiz tổng
+            const normUser = normalizeText(val);
+            const normSys = normalizeText(q.a.toString());
+            isCorrect = (normUser === normSys || normUser.replace(/-/g,'') === normSys.replace(/-/g,''));
+            uAnsStr = val;
+            sAnsStr = q.a;
+        }
+
+        // Lưu kết quả đếm
+        if(isCorrect) {
+            tempModalCorrect++;
+        } else {
+            tempModalWrong++;
+        }
+
+        // Lưu log chi tiết cho phần xem kết quả
+        tempModalAnswersLog.push({
+            qHTML: q.q,
+            uAns: uAnsStr,
+            sAns: sAnsStr,
+            correct: isCorrect
+        });
+
+        // Chuyển câu
+        tempModalQIndex++;
+        renderModalQuizStep();
+    }
+
+    // THÊM MỚI: Hàm xử lý Review cho Modal Bài Tập
+    function openModalQuizReview() {
+        const tbody = document.getElementById('modal-quiz-review-tbody');
+        tbody.innerHTML = "";
+        tempModalAnswersLog.forEach((ans, i) => {
+            const tr = document.createElement('tr');
+            tr.className = ans.correct ? "review-row-correct" : "review-row-wrong";
+            
+            const tSys = document.createElement('td');
+            tSys.innerHTML = `<b>Câu ${i+1}:</b> ${ans.qHTML}<br><br><span style="color:var(--info)">Hệ thống:</span> ${ans.sAns}`;
+            
+            const tUsr = document.createElement('td');
+            tUsr.innerHTML = `<span style="color:${ans.correct ? 'var(--success)' : 'var(--error)'}">Bài làm:</span> ${ans.uAns}`;
+            
+            tr.appendChild(tSys);
+            tr.appendChild(tUsr);
+            tbody.appendChild(tr);
+        });
+        document.getElementById('modal-quiz-review').style.display = 'flex';
+    }
+
+    function closeModalQuizReview() {
+        document.getElementById('modal-quiz-review').style.display = 'none';
+        // Khi đóng overlay review, overlay content-modal (chứa bảng điểm) vẫn giữ nguyên phía dưới
+    }
+
+    // --- HIỂN THỊ CHÍNH ---
+    function showIntro() {
+        const display = document.getElementById('display-content');
+        display.innerHTML = `
+            <div class="intro-view">
+                <div class="intro-title">TÍNH ENTHALPY CỦA PHẢN ỨNG</div>
+                <div class="intro-subtitle">Tính enthalpy của phản ứng dựa vào năng lượng liên kết và enthalpy tạo thành</div>
+                <p style="color:#aaa; max-width:80%;">Vui lòng học phần nội dung bên trái, sau đó nhập thông tin ở cột phải để BẮT ĐẦU LÀM BÀI.</p>
+            </div>
+        `;
+    }
+
+    function calculateDist() {
+        let nInput = document.getElementById('numQuestions');
+        let n = parseInt(nInput.value);
+        if(isNaN(n) || n < 5) n = 5;
+        if(n > 25) { n = 25; alert("Số câu tối đa trong ngân hàng là 25."); }
+        nInput.value = n;
+        N = n;
+
+        let tf = Math.floor(N * 0.2);
+        let sa = Math.floor(N * 0.2);
+        let es = Math.floor(N * 0.2);
+        let mcq = N - (tf + sa + es); // Gộp phần dư
+
+        document.getElementById('dist-mcq').innerText = mcq;
+        document.getElementById('dist-tf').innerText = tf;
+        document.getElementById('dist-sa').innerText = sa;
+        document.getElementById('dist-es').innerText = es;
+        
+        return { mcq, tf, sa, es };
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function prepareQuestion(qOriginal) {
+        let q = JSON.parse(JSON.stringify(qOriginal)); // clone
+        if(q.type === 1) {
+            let optsWithIndex = q.opts.map((o, i) => ({ text: o, isCorrect: i === q.a }));
+            shuffleArray(optsWithIndex);
+            // Xóa chữ cái A, B, C, D cũ nếu có ở đầu
+            q.opts = optsWithIndex.map((o, i) => {
+                let cleanText = o.text.replace(/^[A-D]\.\s*/, '');
+                return `${String.fromCharCode(65 + i)}. ${cleanText}`;
+            });
+            q.a = optsWithIndex.findIndex(o => o.isCorrect);
+        }
+        return q;
+    }
+
+    function startGame() {
+        const ma = document.getElementById('hs-ma').value.trim();
+        const ten = document.getElementById('hs-ten').value.trim();
+        const lop = document.getElementById('hs-lop').value.trim();
+        
+        if(!ma || !ten || !lop) {
+            alert("Vui lòng nhập đầy đủ Mã học sinh, Họ tên và Lớp!");
+            return;
+        }
+
+        initAudio();
+        currentQuizCode = "MD" + Math.floor(100000 + Math.random() * 900000);
+        const dist = calculateDist();
+        
+        // Phân loại ngân hàng
+        let pool1 = qBank.filter(q => q.type === 1);
+        let pool2 = qBank.filter(q => q.type === 2);
+        let pool3 = qBank.filter(q => q.type === 3);
+        let pool4 = qBank.filter(q => q.type === 4);
+
+        shuffleArray(pool1); shuffleArray(pool2); shuffleArray(pool3); shuffleArray(pool4);
+
+        let selectedQ = [];
+        selectedQ = selectedQ.concat(pool1.slice(0, dist.mcq));
+        selectedQ = selectedQ.concat(pool2.slice(0, dist.tf));
+        selectedQ = selectedQ.concat(pool3.slice(0, dist.sa));
+        selectedQ = selectedQ.concat(pool4.slice(0, dist.es));
+
+        activeQuestions = shuffleArray(selectedQ).map(q => prepareQuestion(q));
+        currentQIndex = 0;
+        answersLog = [];
+        score = 0;
+        hasSubmitted = false;
+
+        toggleInputs(true);
+        renderQuestion();
+    }
+
+    function toggleInputs(lock) {
+        document.getElementById('hs-ma').disabled = lock;
+        document.getElementById('hs-ten').disabled = lock;
+        document.getElementById('hs-lop').disabled = lock;
+        document.getElementById('numQuestions').disabled = lock;
+        document.getElementById('btn-start').disabled = lock;
+    }
+
+    // --- LOGIC LÀM BÀI ---
+    function renderQuestion() {
+        if(currentQIndex >= activeQuestions.length) {
+            showResult();
+            return;
+        }
+
+        const q = activeQuestions[currentQIndex];
+        const display = document.getElementById('display-content');
+        
+        let typeStr = "";
+        if(q.type === 1) typeStr = "Trắc nghiệm 4 lựa chọn";
+        if(q.type === 2) typeStr = "Đúng/Sai";
+        if(q.type === 3) typeStr = "Trả lời ngắn";
+        if(q.type === 4) typeStr = "Tự luận";
+
+        let html = `
+            <div class="quiz-header">
+                <span>Dạng bài: ${typeStr}</span>
+                <span>Mã đề: ${currentQuizCode} | Câu: ${currentQIndex + 1}/${activeQuestions.length}</span>
+            </div>
+            <div class="question-text">${q.q}</div>
+            <div class="options-container" id="ans-container">
+        `;
+
+        if(q.type === 1) {
+            q.opts.forEach((opt, idx) => {
+                html += `<div class="option-btn" onclick="selectOpt(this, 1)" data-idx="${idx}">${opt}</div>`;
+            });
+        } else if (q.type === 2) {
+            html += `<div class="option-btn" onclick="selectOpt(this, 2)" data-val="0">Đúng</div>`;
+            html += `<div class="option-btn" onclick="selectOpt(this, 2)" data-val="1">Sai</div>`;
+        } else if (q.type === 3) {
+            html += `<input type="text" id="ans-input" class="input-text" placeholder="Nhập câu trả lời...">`;
+        } else if (q.type === 4) {
+            html += `<textarea id="ans-input" class="input-textarea" placeholder="Nhập nội dung trả lời..."></textarea>`;
+        }
+
+        html += `</div>
+            <button id="btn-submit-ans" class="btn-action" onclick="submitAnswer()">TRẢ LỜI</button>
+            <button id="btn-next-ans" class="btn-action" style="display:none; background:var(--center-border); color:#000;" onclick="nextQuestion()">TIẾP THEO →</button>
+        `;
+        display.innerHTML = html;
+        display.scrollTop = 0; // Reset scroll vùng làm bài
+    }
+
+    function selectOpt(el, type) {
+        if(document.getElementById('btn-next-ans').style.display !== 'none') return; // Đã trả lời
+        
+        const container = document.getElementById('ans-container');
+        Array.from(container.children).forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    function normalizeText(text) {
+        return text.toLowerCase()
+            .replace(/\s+/g, ' ')
+            .replace(/\s*-\s*/g, '-')
+            .replace(/\s*,\s*/g, ',')
+            .trim();
+    }
+
+    function submitAnswer() {
+        const q = activeQuestions[currentQIndex];
+        let isCorrect = false;
+        let userAnsStr = "";
+        let sysAnsStr = "";
+
+        if(q.type === 1) {
+            const selected = document.querySelector('.option-btn.selected');
+            if(!selected) { alert("Vui lòng chọn 1 đáp án!"); return; }
+            const uIdx = parseInt(selected.getAttribute('data-idx'));
+            isCorrect = (uIdx === q.a);
+            userAnsStr = selected.innerHTML;
+            sysAnsStr = q.opts[q.a];
+            
+            selected.classList.add(isCorrect ? 'correct' : 'wrong');
+            if(!isCorrect) {
+                document.querySelector(`.option-btn[data-idx="${q.a}"]`).classList.add('correct');
+            }
+
+        } else if(q.type === 2) {
+            const selected = document.querySelector('.option-btn.selected');
+            if(!selected) { alert("Vui lòng chọn Đúng hoặc Sai!"); return; }
+            const uVal = parseInt(selected.getAttribute('data-val'));
+            isCorrect = (uVal === q.a);
+            userAnsStr = uVal === 0 ? "Đúng" : "Sai";
+            sysAnsStr = q.a === 0 ? "Đúng" : "Sai";
+
+            selected.classList.add(isCorrect ? 'correct' : 'wrong');
+            if(!isCorrect) {
+                document.querySelector(`.option-btn[data-val="${q.a}"]`).classList.add('correct');
+            }
+
+        } else if(q.type === 3) {
+            const input = document.getElementById('ans-input');
+            const val = input.value.trim();
+            if(!val) { alert("Vui lòng nhập câu trả lời!"); return; }
+            
+            const normUser = normalizeText(val);
+            const normSys = normalizeText(q.a.toString());
+            isCorrect = (normUser === normSys || normUser.replace(/-/g,'') === normSys.replace(/-/g,''));
+            
+            userAnsStr = val;
+            sysAnsStr = q.a;
+            input.disabled = true;
+            input.classList.add(isCorrect ? 'input-correct' : 'input-wrong');
+
+        } else if(q.type === 4) {
+            const input = document.getElementById('ans-input');
+            const val = input.value.trim();
+            if(!val) { alert("Vui lòng nhập câu trả lời!"); return; }
+            
+            const normUser = val.toLowerCase();
+            isCorrect = q.k.some(kw => normUser.includes(kw.toLowerCase()));
+            
+            userAnsStr = val;
+            sysAnsStr = "Ý chính: " + q.k.join(", ");
+            input.disabled = true;
+            input.classList.add(isCorrect ? 'input-correct' : 'input-wrong');
+        }
+
+        playSound(isCorrect);
+        
+        answersLog.push({
+            qHTML: q.q,
+            uAns: userAnsStr,
+            sAns: sysAnsStr,
+            correct: isCorrect
+        });
+
+        document.getElementById('btn-submit-ans').style.display = 'none';
+        document.getElementById('btn-next-ans').style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentQIndex++;
+        renderQuestion();
+    }
+
+    // --- KẾT QUẢ & NỘP BÀI ---
+    function showResult() {
+        const correctCount = answersLog.filter(a => a.correct).length;
+        const total = activeQuestions.length;
+        // Điểm = (đúng * 10) / tổng, làm tròn 1 chữ số
+        score = Math.round(((correctCount * 10) / total) * 10) / 10;
+        
+        let rankHtml = "";
+        if(score >= 9) rankHtml = `<div class="rank-xs">XUẤT SẮC</div>`;
+        else if(score >= 8) rankHtml = `<div class="rank-g">GIỎI</div>`;
+        else if(score >= 5) rankHtml = `<div class="rank-k">KHÁ</div>`;
+        else rankHtml = `<div class="rank-tb">CẦN CỐ GẮNG</div>`;
+
+        const display = document.getElementById('display-content');
+        display.innerHTML = `
+            <div class="result-view">
+                <h2>Hoàn thành bài kiểm tra!</h2>
+                <div class="score-display">${score.toFixed(1)} <span style="font-size:1.5rem">/ 10</span></div>
+                ${rankHtml}
+                <div style="margin:15px 0; color:#ccc;">Số câu đúng: ${correctCount} / ${total}</div>
+                <div id="submit-status" style="color:var(--info); font-weight:bold; height:20px; margin-bottom:10px;"></div>
+                
+                <div class="btn-group">
+                    <button class="btn-result btn-review" onclick="openReview()">XEM KẾT QUẢ BÀI LÀM</button>
+                    <button class="btn-result btn-nop" id="btn-final-submit" onclick="submitToGoogle(${correctCount}, ${total})">NỘP BÀI</button>
+                    <button class="btn-result btn-retry" onclick="resetGame()">LÀM LẠI</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function submitToGoogle(correctCount, totalCount) {
+        if(hasSubmitted) return;
+
+        const ma = document.getElementById('hs-ma').value;
+        const ten = document.getElementById('hs-ten').value;
+        const lop = document.getElementById('hs-lop').value;
+        const btnSubmit = document.getElementById('btn-final-submit');
+        const statusDiv = document.getElementById('submit-status');
+
+        btnSubmit.disabled = true;
+        statusDiv.innerText = "Đang gửi dữ liệu...";
+
+        const payload = {
+            hoTen: ten,
+            lop: lop,
+            diem: score,
+            soDung: correctCount,
+            tongSoCau: totalCount
+        };
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify(payload)
+        }).then(() => {
+            hasSubmitted = true;
+            statusDiv.innerText = "ĐÃ GỬI BÀI THÀNH CÔNG";
+            statusDiv.style.color = "var(--success)";
+        }).catch(err => {
+            btnSubmit.disabled = false; // Mở lại nếu lỗi
+            statusDiv.innerText = "Lỗi mạng. Vui lòng thử lại!";
+            statusDiv.style.color = "var(--error)";
+        });
+    }
+
+    function openReview() {
+        const tbody = document.getElementById('review-tbody');
+        tbody.innerHTML = "";
+        answersLog.forEach((ans, i) => {
+            const tr = document.createElement('tr');
+            tr.className = ans.correct ? "review-row-correct" : "review-row-wrong";
+            
+            const tSys = document.createElement('td');
+            tSys.innerHTML = `<b>Câu ${i+1}:</b> ${ans.qHTML}<br><br><span style="color:var(--info)">Hệ thống:</span> ${ans.sAns}`;
+            
+            const tUsr = document.createElement('td');
+            tUsr.innerHTML = `<span style="color:${ans.correct ? 'var(--success)' : 'var(--error)'}">Bài làm:</span> ${ans.uAns}`;
+            
+            tr.appendChild(tSys);
+            tr.appendChild(tUsr);
+            tbody.appendChild(tr);
+        });
+        document.getElementById('review-modal').style.display = 'flex';
+    }
+
+    function resetGame() {
+        toggleInputs(false);
+        showIntro();
+    }
+    
+    function resetAll() {
+        // Xóa thông tin đã nhập nhưng giữ nguyên trạng thái học nội dung
+        document.getElementById('hs-ma').value = "";
+        document.getElementById('hs-ten').value = "";
+        document.getElementById('hs-lop').value = "";
+        document.getElementById('numQuestions').value = 10;
+        calculateDist();
+        resetGame();
+    }
+
+    // --- INIT ---
+    window.onload = () => {
+        renderMenu();
+        showIntro();
+        calculateDist();
+    };
+</script>
+
+</body>
+</html>
